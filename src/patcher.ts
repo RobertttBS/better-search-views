@@ -224,6 +224,30 @@ export class Patcher {
 
     this.disposerRegistry.addOnEmptyResultsCallback(dispose);
 
-    match.el = mountPoint;
+    // Instead of replacing match.el entirely, we preserve the original element
+    // and append our custom content to it. This is important because Obsidian
+    // adds the "Link" button for unlinked mentions to match.el on hover.
+    // If we replace match.el, Obsidian can no longer find the element to add
+    // the button to.
+    
+    // Clear existing content from match.el while preserving the element itself
+    // We need to preserve any buttons that Obsidian might have already added
+    const existingLinkButton = match.el.querySelector('.search-result-file-match-replace-button');
+    const existingHoverButtons = match.el.querySelectorAll('.search-result-hover-button');
+    
+    match.el.empty();
+    
+    // Append our custom rendered content
+    match.el.appendChild(mountPoint);
+    
+    // Re-append the Link button if it exists (for unlinked mentions)
+    if (existingLinkButton) {
+      match.el.appendChild(existingLinkButton);
+    }
+    
+    // Re-append hover buttons if they exist
+    existingHoverButtons.forEach((button: Element) => {
+      match.el.appendChild(button);
+    });
   }
 }
